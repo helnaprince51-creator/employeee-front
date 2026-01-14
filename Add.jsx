@@ -1,9 +1,11 @@
 import { Box, Button, TextField } from "@mui/material";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Add = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [inputs, setInputs] = useState({
     EmpName: "",
@@ -12,87 +14,102 @@ const Add = () => {
     img_url: "",
   });
 
+  // ✅ For UPDATE (prefill data)
+  useEffect(() => {
+    if (location.state) {
+      setInputs(location.state);
+    }
+  }, [location.state]);
+
   const inputHandler = (e) => {
     setInputs({ ...inputs, [e.target.name]: e.target.value });
   };
 
-  const addData = (e) => {
-    e.preventDefault(); // prevent form submission page reload
-    fetch("http://localhost:3001/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(inputs),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Employee added:", data);
-        navigate("/"); // go back to home page
-      })
-      .catch((err) => console.log("Error adding employee:", err));
+  const addData = () => {
+    if (inputs._id) {
+      // ✅ UPDATE
+      axios
+        .put(`http://localhost:3001/update/${inputs._id}`, inputs)
+        .then((res) => {
+          alert(res.data.message);
+          navigate("/");
+        })
+        .catch((err) => console.log(err));
+    } else {
+      // ✅ ADD
+      axios
+        .post("http://localhost:3001/add", inputs)
+        .then((res) => {
+          alert(res.data.message);
+          navigate("/");
+        })
+        .catch((err) => console.log(err));
+    }
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "90vh",
-      }}
-    >
+    <div>
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: 2,
-          width: "500px",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "90vh",
         }}
       >
-        <TextField
-          variant="outlined"
-          placeholder="Employee Name"
-          name="EmpName"
-          value={inputs.EmpName}
-          onChange={inputHandler}
-          fullWidth
-        />
-
-        <TextField
-          variant="outlined"
-          placeholder="Designation"
-          name="designation"
-          value={inputs.designation}
-          onChange={inputHandler}
-          fullWidth
-        />
-
-        <TextField
-          variant="outlined"
-          placeholder="Employee ID"
-          name="empId"
-          value={inputs.empId}
-          onChange={inputHandler}
-          fullWidth
-        />
-
-        <TextField
-          variant="outlined"
-          placeholder="Photo URL"
-          name="img_url"
-          value={inputs.img_url}
-          onChange={inputHandler}
-          fullWidth
-        />
-
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={addData}
+        <Box
+          component="form"
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            width: "600px",
+          }}
         >
-          Submit
-        </Button>
+          <TextField
+            variant="outlined"
+            placeholder="Employee Name"
+            onChange={inputHandler}
+            name="EmpName"
+            value={inputs.EmpName}
+            fullWidth
+          />
+
+          <TextField
+            variant="outlined"
+            placeholder="Designation"
+            onChange={inputHandler}
+            name="designation"
+            value={inputs.designation}
+          />
+
+          <TextField
+            variant="outlined"
+            placeholder="Employee Id"
+            onChange={inputHandler}
+            name="empId"
+            value={inputs.empId}
+          />
+
+          <TextField
+            variant="outlined"
+            placeholder="Photo (paste image link)"
+            onChange={inputHandler}
+            name="img_url"
+            value={inputs.img_url}
+          />
+
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={addData}
+          >
+            {inputs._id ? "Update" : "Submit"}
+          </Button>
+        </Box>
       </Box>
-    </Box>
+    </div>
   );
 };
 
